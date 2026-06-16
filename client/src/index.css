@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at 50% -10%, #0f5132 0%, #062a16 55%, #04200f 100%);
+  color: #f3f6f4;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* subtle pitch stripes background */
+.pitch-stripes {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0px,
+    rgba(255, 255, 255, 0.03) 40px,
+    transparent 40px,
+    transparent 80px
+  );
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-semibold
+           transition active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100;
+  }
+  .btn-gold {
+    @apply btn bg-gradient-to-b from-gold-400 to-gold-500 text-pitch-900 shadow-card;
+  }
+  .btn-green {
+    @apply btn bg-pitch-600 text-white hover:bg-pitch-500;
+  }
+  .btn-ghost {
+    @apply btn bg-white/10 text-white hover:bg-white/20;
+  }
+  .btn-danger {
+    @apply btn bg-red-500/90 text-white hover:bg-red-500;
+  }
+  .card {
+    @apply rounded-2xl bg-white/[0.07] backdrop-blur border border-white/10 shadow-card;
+  }
+  .input {
+    @apply w-full rounded-xl bg-black/30 border border-white/15 px-4 py-3 text-white
+           placeholder-white/40 outline-none focus:border-gold-400 transition;
+  }
+  .chip {
+    @apply rounded-full px-3 py-1.5 text-sm font-medium border transition select-none cursor-pointer;
+  }
+}
+
+.fade-in {
+  animation: fade-in 0.35s ease both;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

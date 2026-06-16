@@ -1,0 +1,13 @@
+{
+  "name": "worldcuplotto",
+  "version": "1.0.0",
+  "private": true,
+  "description": "世界杯彩票排行榜 — 高中同学竞猜记账",
+  "scripts": {
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev"
+  }
+}
