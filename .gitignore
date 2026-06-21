@@ -2,5 +2,8 @@ node_modules/
 client/dist/
 server/data.sqlite
 server/data.sqlite-*
+*.sqlite
+*.sqlite-*
+*.db
 *.log
 .DS_Store

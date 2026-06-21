@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { api } from '../api.js';
 import { Modal, useToast } from '../ui.jsx';
+import AgentCheckbox from './AgentCheckbox.jsx';
 
 export default function SettleModal({ bet, onClose, onDone }) {
   const toast = useToast();
   const [status, setStatus] = useState(bet?.status || 'pending');
   const [payout, setPayout] = useState(bet?.payout ? String(bet.payout) : '');
+  const [agentSettle, setAgentSettle] = useState(!!bet?.agent_buy || bet?.settle_commission > 0);
+  const [commission, setCommission] = useState(bet?.settle_commission ? String(bet.settle_commission) : '');
   const [busy, setBusy] = useState(false);
 
   async function save() {
@@ -13,7 +16,12 @@ export default function SettleModal({ bet, onClose, onDone }) {
     try {
       await api(`/bets/${bet.id}/settle`, {
         method: 'POST',
-        body: { status, payout: Number(payout) || 0 },
+        body: {
+          status,
+          payout: Number(payout) || 0,
+          agent_settle: agentSettle,
+          settle_commission: agentSettle ? Number(commission) || 0 : 0,
+        },
       });
       toast.success('已结算');
       onDone();
@@ -77,6 +85,26 @@ export default function SettleModal({ bet, onClose, onDone }) {
           <p className="mt-2 text-xs text-white/40">提示：填写实际中奖金额，将计入你的现金余额。</p>
         </div>
       )}
+
+      <div className="mt-4">
+        <AgentCheckbox checked={agentSettle} onChange={setAgentSettle} label="🧧 这单是高哥代买" />
+        {agentSettle && (
+          <div className="mt-3">
+            <label className="text-xs text-white/50">高哥结算提成（元）</label>
+            <input
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min="0"
+              className="input mt-1"
+              placeholder="高哥这次抽了多少"
+              value={commission}
+              onChange={(e) => setCommission(e.target.value)}
+            />
+            <p className="mt-2 text-xs text-white/40">只影响「真实钱」榜，不影响「彩票实力」榜。</p>
+          </div>
+        )}
+      </div>
     </Modal>
   );
 }

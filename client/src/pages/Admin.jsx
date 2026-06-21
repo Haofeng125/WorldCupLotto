@@ -80,7 +80,7 @@ function UsersTab() {
                 <span className="rounded-full bg-gold-500 text-pitch-900 text-xs px-2 py-0.5">管理员</span>
               )}
             </p>
-            <p className="text-white/50 text-sm">总分 {money(u.score)} · 现金 {money(u.cash)}</p>
+            <p className="text-white/50 text-sm">实力 {money(u.skill_score)} · 真实 {money(u.real_score)}</p>
           </div>
           <div className="flex gap-2">
             <button className="btn-ghost py-1.5 px-3 text-sm" onClick={() => setEditing(u)}>

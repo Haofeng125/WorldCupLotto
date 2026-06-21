@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api } from '../api.js';
 import { Modal, useToast } from '../ui.jsx';
 import BetForm from './BetForm.jsx';
+import SimpleBetForm from './SimpleBetForm.jsx';
 
 export default function EditBetModal({ bet, onClose, onDone }) {
   const toast = useToast();
@@ -22,7 +23,11 @@ export default function EditBetModal({ bet, onClose, onDone }) {
 
   return (
     <Modal open={!!bet} onClose={onClose} title="修改投注">
-      <BetForm initial={bet} submitLabel="保存修改" onSubmit={submit} busy={busy} />
+      {bet.simple ? (
+        <SimpleBetForm initial={bet} submitLabel="保存修改" onSubmit={submit} busy={busy} />
+      ) : (
+        <BetForm initial={bet} submitLabel="保存修改" onSubmit={submit} busy={busy} />
+      )}
     </Modal>
   );
 }

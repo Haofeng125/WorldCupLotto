@@ -143,12 +143,11 @@ app.post('/api/me/password', auth, (req, res) => {
 /* --------------------------- leaderboard --------------------------- */
 app.get('/api/leaderboard', auth, (req, res) => {
   const users = db.prepare('SELECT * FROM users ORDER BY id').all();
-  const board = users
-    .map((u) => {
-      const fin = userFinance(u);
-      return { id: u.id, username: u.username, is_admin: !!u.is_admin, ...fin };
-    })
-    .sort((a, b) => b.score - a.score);
+  // 返回两榜所需字段，前端按所选榜单排序（彩票实力 / 真实钱）
+  const board = users.map((u) => {
+    const fin = userFinance(u);
+    return { id: u.id, username: u.username, is_admin: !!u.is_admin, ...fin };
+  });
   res.json({ leaderboard: board });
 });
 
@@ -169,11 +168,15 @@ app.get('/api/bets', auth, (req, res) => {
 });
 
 app.post('/api/bets', auth, (req, res) => {
-  const { stake, note, legs } = req.body || {};
+  const { stake, note, legs, simple, bet_date, agent_buy } = req.body || {};
   const amount = Number(stake);
   if (!amount || amount <= 0) return res.status(400).json({ error: '请输入正确的投注金额（本金）' });
-  const legErr = validateLegs(legs);
-  if (legErr) return res.status(400).json({ error: legErr });
+  if (simple) {
+    if (!String(bet_date || '').trim()) return res.status(400).json({ error: '请选择比赛日' });
+  } else {
+    const legErr = validateLegs(legs);
+    if (legErr) return res.status(400).json({ error: legErr });
+  }
 
   const cash = availableCash(req.user);
   if (amount > cash + 1e-9)
@@ -181,9 +184,11 @@ app.post('/api/bets', auth, (req, res) => {
 
   const tx = db.transaction(() => {
     const info = db
-      .prepare('INSERT INTO bets (user_id, stake, note) VALUES (?, ?, ?)')
-      .run(req.user.id, amount, String(note || ''));
-    insertLegs(info.lastInsertRowid, legs);
+      .prepare(
+        'INSERT INTO bets (user_id, stake, note, simple, bet_date, agent_buy) VALUES (?, ?, ?, ?, ?, ?)'
+      )
+      .run(req.user.id, amount, String(note || ''), simple ? 1 : 0, simple ? String(bet_date || '') : '', agent_buy ? 1 : 0);
+    if (!simple) insertLegs(info.lastInsertRowid, legs);
     return info.lastInsertRowid;
   });
   const id = tx();
@@ -197,11 +202,15 @@ app.put('/api/bets/:id', auth, (req, res) => {
   if (bet.user_id !== req.user.id && !req.user.is_admin)
     return res.status(403).json({ error: '无权修改' });
 
-  const { stake, note, legs } = req.body || {};
+  const { stake, note, legs, simple, bet_date, agent_buy } = req.body || {};
   const amount = Number(stake);
   if (!amount || amount <= 0) return res.status(400).json({ error: '请输入正确的投注金额（本金）' });
-  const legErr = validateLegs(legs);
-  if (legErr) return res.status(400).json({ error: legErr });
+  if (simple) {
+    if (!String(bet_date || '').trim()) return res.status(400).json({ error: '请选择比赛日' });
+  } else {
+    const legErr = validateLegs(legs);
+    if (legErr) return res.status(400).json({ error: legErr });
+  }
 
   const owner = db.prepare('SELECT * FROM users WHERE id = ?').get(bet.user_id);
   const cash = availableCash(owner, bet.id);
@@ -209,9 +218,16 @@ app.put('/api/bets/:id', auth, (req, res) => {
     return res.status(400).json({ error: `余额不足，可用余额 ${cash} 元` });
 
   const tx = db.transaction(() => {
-    db.prepare('UPDATE bets SET stake = ?, note = ? WHERE id = ?').run(amount, String(note || ''), bet.id);
+    db.prepare('UPDATE bets SET stake = ?, note = ?, simple = ?, bet_date = ?, agent_buy = ? WHERE id = ?').run(
+      amount,
+      String(note || ''),
+      simple ? 1 : 0,
+      simple ? String(bet_date || '') : '',
+      agent_buy ? 1 : 0,
+      bet.id
+    );
     db.prepare('DELETE FROM bet_legs WHERE bet_id = ?').run(bet.id);
-    insertLegs(bet.id, legs);
+    if (!simple) insertLegs(bet.id, legs);
   });
   tx();
   res.json({ bet: getBetWithLegs(bet.id) });
@@ -233,7 +249,7 @@ app.post('/api/bets/:id/settle', auth, (req, res) => {
   if (bet.user_id !== req.user.id && !req.user.is_admin)
     return res.status(403).json({ error: '无权结算' });
 
-  const { status } = req.body || {};
+  const { status, agent_settle } = req.body || {};
   if (!['pending', 'won', 'lost'].includes(status))
     return res.status(400).json({ error: '结算状态不合法' });
   let payout = 0;
@@ -241,9 +257,15 @@ app.post('/api/bets/:id/settle', auth, (req, res) => {
     payout = Number(req.body.payout);
     if (!(payout >= 0)) return res.status(400).json({ error: '请输入正确的中奖金额' });
   }
-  db.prepare('UPDATE bets SET status = ?, payout = ?, settled_at = ? WHERE id = ?').run(
+  let settleCommission = 0;
+  if (agent_settle) {
+    settleCommission = Number(req.body.settle_commission);
+    if (!(settleCommission >= 0)) return res.status(400).json({ error: '请输入正确的高哥提成金额' });
+  }
+  db.prepare('UPDATE bets SET status = ?, payout = ?, settle_commission = ?, settled_at = ? WHERE id = ?').run(
     status,
     payout,
+    settleCommission,
     status === 'pending' ? null : new Date().toISOString(),
     bet.id
   );

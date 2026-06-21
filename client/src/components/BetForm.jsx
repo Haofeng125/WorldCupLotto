@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { TEAMS } from '../teams.js';
+import AgentCheckbox from './AgentCheckbox.jsx';
 
 const PLAYS = ['胜', '平', '负', '让胜', '让平', '让负', '其他'];
 const isHandicap = (p) => p.startsWith('让');
@@ -12,6 +13,7 @@ function emptyLeg() {
 export default function BetForm({ initial, submitLabel, onSubmit, busy }) {
   const [stake, setStake] = useState(initial?.stake ? String(initial.stake) : '');
   const [note, setNote] = useState(initial?.note || '');
+  const [agentBuy, setAgentBuy] = useState(!!initial?.agent_buy);
   const [legs, setLegs] = useState(
     initial?.legs?.length ? initial.legs.map((l) => ({ ...emptyLeg(), ...l })) : [emptyLeg()]
   );
@@ -30,7 +32,7 @@ export default function BetForm({ initial, submitLabel, onSubmit, busy }) {
 
   function submit(e) {
     e.preventDefault();
-    onSubmit({ stake: Number(stake), note, legs });
+    onSubmit({ stake: Number(stake), note, legs, simple: false, agent_buy: agentBuy });
   }
 
   return (
@@ -152,6 +154,7 @@ export default function BetForm({ initial, submitLabel, onSubmit, busy }) {
             onChange={(e) => setNote(e.target.value)}
           />
         </div>
+        <AgentCheckbox checked={agentBuy} onChange={setAgentBuy} label="🧧 高哥代买（买入提成 1 元）" />
       </div>
 
       <button className="btn-gold w-full text-lg py-3" disabled={busy}>

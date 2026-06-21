@@ -21,14 +21,18 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS bets (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  stake      REAL NOT NULL,
-  status     TEXT NOT NULL DEFAULT 'pending',   -- pending | won | lost
-  payout     REAL NOT NULL DEFAULT 0,
-  note       TEXT NOT NULL DEFAULT '',
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  settled_at TEXT
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id           INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  stake             REAL NOT NULL,
+  status            TEXT NOT NULL DEFAULT 'pending',   -- pending | won | lost
+  payout            REAL NOT NULL DEFAULT 0,
+  note              TEXT NOT NULL DEFAULT '',
+  simple            INTEGER NOT NULL DEFAULT 0,        -- 1 = 简易投注（只记日期+金额）
+  bet_date          TEXT NOT NULL DEFAULT '',          -- 简易投注的比赛日
+  agent_buy         INTEGER NOT NULL DEFAULT 0,        -- 1 = 高哥代买（买入提成 1 元）
+  settle_commission REAL NOT NULL DEFAULT 0,           -- 结算时高哥提成金额
+  created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+  settled_at        TEXT
 );
 
 CREATE TABLE IF NOT EXISTS bet_legs (
@@ -43,6 +47,19 @@ CREATE TABLE IF NOT EXISTS bet_legs (
   sort_order INTEGER NOT NULL DEFAULT 0
 );
 `);
+
+// --- 迁移：给已存在的数据库补上新列（保留线上玩家数据，不会清空） ---
+function ensureColumn(table, column, ddl) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all();
+  if (!cols.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
+    console.log(`迁移：已为 ${table} 添加列 ${column}`);
+  }
+}
+ensureColumn('bets', 'simple', 'simple INTEGER NOT NULL DEFAULT 0');
+ensureColumn('bets', 'bet_date', "bet_date TEXT NOT NULL DEFAULT ''");
+ensureColumn('bets', 'agent_buy', 'agent_buy INTEGER NOT NULL DEFAULT 0');
+ensureColumn('bets', 'settle_commission', 'settle_commission REAL NOT NULL DEFAULT 0');
 
 // Seed admin account
 const adminUser = '老朴';

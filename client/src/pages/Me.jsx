@@ -54,14 +54,23 @@ export default function Me() {
         {/* 资产 */}
         {user && (
           <div className="card p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-lg font-bold">{user.username}</p>
-                <p className="text-white/50 text-sm">总分 {money(user.score)}</p>
+            <p className="text-lg font-bold">{user.username}</p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-black/20 px-4 py-3">
+                <p className="text-white/50 text-xs">彩票实力</p>
+                <p className="font-extrabold text-gold-400 text-lg">{money(user.skill_score)}</p>
               </div>
-              <div className="text-right text-sm text-white/70 space-y-0.5">
-                <p>现金 {money(user.cash)}</p>
-                <p>未结算 {money(user.pending_stake)}</p>
+              <div className="rounded-xl bg-black/20 px-4 py-3">
+                <p className="text-white/50 text-xs">真实钱</p>
+                <p className="font-extrabold text-gold-400 text-lg">{money(user.real_score)}</p>
+              </div>
+              <div className="rounded-xl bg-black/20 px-4 py-3">
+                <p className="text-white/50 text-xs">现金 / 未结算</p>
+                <p className="font-bold text-sm">{money(user.cash)} / {money(user.pending_stake)}</p>
+              </div>
+              <div className="rounded-xl bg-black/20 px-4 py-3">
+                <p className="text-white/50 text-xs">已付高哥提成</p>
+                <p className="font-bold text-sm text-red-300">{money(user.commission)}</p>
               </div>
             </div>
             <div className="mt-4 flex gap-3">
